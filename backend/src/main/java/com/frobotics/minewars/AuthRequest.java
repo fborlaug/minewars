@@ -15,8 +15,8 @@ public record AuthRequest(String username, String password) {
         if (trimmedUsername.length() < 3 || trimmedUsername.length() > 32) {
             throw Errors.badRequest("Username must be 3–32 characters");
         }
-        if (password.length() < 8) {
-            throw Errors.badRequest("Password must be at least 8 characters");
+        if (password.length() < 8 || password.length() > 72) {
+            throw Errors.badRequest("Password must be 8–72 characters");
         }
         return new AuthRequest(trimmedUsername, password);
     }

@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: minewars-postgres
+    environment:
+      POSTGRES_DB: minewars
+      POSTGRES_USER: minewars
+      POSTGRES_PASSWORD: minewars
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
+

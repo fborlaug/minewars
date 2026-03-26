@@ -45,12 +45,16 @@ public class AuthResource {
         }
     }
 
+    // Pre-hashed dummy to ensure constant-time login regardless of user existence
+    private static final String DUMMY_HASH = BCrypt.hashpw("dummy", BCrypt.gensalt());
+
     @POST
     @Path("/login")
     public Response login(AuthRequest raw) {
         AuthRequest request = raw.validated();
         Player player = Player.findByUsername(request.username());
-        if (player == null || !BCrypt.checkpw(request.password(), player.passwordHash)) {
+        String hash = player != null ? player.passwordHash : DUMMY_HASH;
+        if (!BCrypt.checkpw(request.password(), hash) || player == null) {
             throw Errors.unauthorized("Invalid credentials");
         }
         String token = tokenService.generate(player);

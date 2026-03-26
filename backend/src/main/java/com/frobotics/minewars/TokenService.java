@@ -13,12 +13,15 @@ public class TokenService {
     @ConfigProperty(name = "mp.jwt.verify.issuer")
     String issuer;
 
+    @ConfigProperty(name = "minewars.jwt.expiry")
+    Duration expiry;
+
     public String generate(Player player) {
         return Jwt.issuer(issuer)
                 .upn(player.username)
                 .subject(String.valueOf(player.id))
                 .groups(Set.of("player"))
-                .expiresIn(Duration.ofHours(24))
+                .expiresIn(expiry)
                 .sign();
     }
 }

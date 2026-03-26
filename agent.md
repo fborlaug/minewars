@@ -10,9 +10,9 @@
 
 | Layer    | Technology                          | Notes                         |
 |----------|-------------------------------------|-------------------------------|
-| Backend  | Quarkus 3.32.4, Java 25, Maven      | REST, JWT auth, H2/Panache    |
+| Backend  | Quarkus 3.32.4, Java 25, Maven      | REST, JWT auth, Panache, Flyway |
 | Frontend | Vue 3, TypeScript, Vite 8, CSS      | Vue Router, Pinia             |
-| Database | H2 (in-memory, dev)                 | PostgreSQL planned for prod   |
+| Database | PostgreSQL 17 (Docker, port 5433)    | Flyway migrations             |
 | Auth     | SmallRye JWT (RSA-signed)           | 24h token expiry              |
 
 ## Project Structure
@@ -78,16 +78,16 @@ minewars/
 
 ## Current Status
 
-- **Current phase:** Phase 4 — Lobby
-- **Last completed step:** Step 7 — Frontend login page
-- **Next step:** Step 8 — Backend lobby
+- **Current phase:** Phase 5 — AWS CDK Deployment
+- **Last completed step:** Step 9 — Flyway migrations
+- **Next step:** Step 10 — CDK project setup
 
 ## Key Decisions
 
 | Decision     | Choice                   | Reason                                                  |
 |--------------|--------------------------|---------------------------------------------------------|
 | Dependencies | Minimal / YAGNI          | Add only when a plan step requires them                 |
-| Database     | H2 in-memory (dev)       | PostgreSQL migration in a future plan                   |
+| Database | PostgreSQL 17 (Docker)   | Migrated from H2 in Step 8; Flyway manages schema      |
 | Auth         | RSA-signed JWT, jBCrypt  | Standard Quarkus SmallRye JWT + simple bcrypt hashing   |
 | Game model   | Real-time simultaneous   | Both players click freely, no turns                     |
 | Deployment   | Deferred                 | Will be a separate future plan                          |
@@ -102,3 +102,4 @@ minewars/
 | 2026-03-21 | Phase 2 complete: verified backend GET /api/hello, created HelloView.vue with fetch, added Vite proxy, confirmed end-to-end connectivity. Cleaned up scaffold boilerplate.                                                                                                                                         |
 | 2026-03-21 | Project review & cleanup: removed 6 unused backend deps (hibernate, jackson, security, jwt, websockets, h2), removed pinia from frontend, stripped H2/Hibernate config, bumped Quarkus 3.32.3→3.32.4, surefire 3.5.4→3.5.5, all frontend deps to latest. Fixed quarkus-maven-plugin groupId. YAGNI policy adopted. |
 | 2026-03-21 | Phase 3 complete: Player entity (Panache), AuthResource (register + login), JWT generation (RSA, 24h expiry), jBCrypt password hashing, H2 datasource. Frontend: Pinia auth store, LoginView, RegisterView, router auth guard, nav with login/logout. All endpoints verified via curl.                             |
+| 2026-03-26 | Phase 4 complete (Steps 8-9): Migrated to PostgreSQL 17 (Docker, port 5433) + Flyway. Replaced quarkus-jdbc-h2 with quarkus-jdbc-postgresql, added quarkus-flyway, docker-compose.yml, V1 migration. Fixed player_SEQ sequence issue (PanacheEntity uses SEQUENCE strategy, not IDENTITY). All endpoints verified.  |

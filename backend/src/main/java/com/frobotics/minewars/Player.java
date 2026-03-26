@@ -1,5 +1,6 @@
 package com.frobotics.minewars;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.quarkus.hibernate.orm.panache.PanacheEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -12,7 +13,8 @@ public class Player extends PanacheEntity {
     @Column(unique = true, nullable = false, length = 32)
     public String username;
 
-    @Column(nullable = false, length = 72)
+    @JsonIgnore
+    @Column(name = "password_hash", nullable = false, length = 72)
     public String passwordHash;
 
     public int wins;

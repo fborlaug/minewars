@@ -22,8 +22,8 @@ A competitive 2-player minesweeper web game. **Backend**: Quarkus 3.32.4, Java 2
 
 ## Phase 4 — PostgreSQL
 
-- [ ] **Step 8 — Switch to PostgreSQL.** Replace `quarkus-jdbc-h2` with `quarkus-jdbc-postgresql` in `pom.xml`. Add a `docker-compose.yml` at the project root to run PostgreSQL. Update `application.properties` with PostgreSQL connection config (use Quarkus dev-services or explicit Docker container). Remove `drop-and-create` schema strategy. Verify register + login still work against PostgreSQL.
-- [ ] **Step 9 — Flyway migrations.** Add the `quarkus-flyway` extension to `pom.xml`. Let Flyway own all schema changes (remove any Hibernate schema-management strategy). Create `src/main/resources/db/migration/V1__create_player_table.sql` with the `Player` table DDL. Verify the migration runs on startup and register + login still work.
+- [x] **Step 8 — Switch to PostgreSQL.** Replace `quarkus-jdbc-h2` with `quarkus-jdbc-postgresql` in `pom.xml`. Add a `docker-compose.yml` at the project root to run PostgreSQL. Update `application.properties` with PostgreSQL connection config (use Quarkus dev-services or explicit Docker container). Remove `drop-and-create` schema strategy. Verify register + login still work against PostgreSQL.
+- [x] **Step 9 — Flyway migrations.** Add the `quarkus-flyway` extension to `pom.xml`. Let Flyway own all schema changes (remove any Hibernate schema-management strategy). Create `src/main/resources/db/migration/V1__create_player_table.sql` with the `Player` table DDL. Verify the migration runs on startup and register + login still work.
 
 ## Phase 5 — AWS CDK Deployment
 
