@@ -27,8 +27,12 @@ A competitive 2-player minesweeper web game. **Backend**: Quarkus 3.32.4, Java 2
 
 ## Phase 5 — AWS CDK Deployment
 
-- [ ] **Step 10 — CDK project setup.** Create an `infra/` folder at the project root with an AWS CDK app (TypeScript). Define a single stack with: a VPC, an RDS PostgreSQL instance (or Aurora Serverless v2), an ECS Fargate service running the Quarkus backend (built as a container image), and an S3 bucket + CloudFront distribution serving the Vue frontend static build. Output the CloudFront URL and backend ALB URL.
-- [ ] **Step 11 — CI/CD pipeline.** Add a CDK Pipeline or GitHub Actions workflow that: builds the backend JAR, builds the frontend (`npm run build`), deploys infrastructure via `cdk deploy`, pushes the backend container to ECR, and syncs `frontend/dist/` to S3 with CloudFront invalidation. Add environment-specific config (dev/prod) via CDK context or environment variables.
+- [ ] **Step 10a — Backend container image.** Add the `quarkus-smallrye-health` extension to `pom.xml`. Create a production `Dockerfile` that builds the Quarkus app and runs `quarkus-run.jar`. Verify locally with `docker build` and `docker run` (connecting to the local PostgreSQL).
+- [ ] **Step 10b — CDK project + networking.** Create an `infra/` folder at the project root with an AWS CDK app (TypeScript). Define a VPC with public and private subnets. Define an RDS PostgreSQL instance in a private subnet with a security group allowing access only from the backend service.
+- [ ] **Step 10c — Backend deployment.** Add an ECS Fargate service behind an ALB running the backend container image (pushed to ECR). Pass DB credentials via Secrets Manager and JWT/app config via environment variables. Health check on `/q/health`. Output the ALB URL.
+- [ ] **Step 10d — Frontend deployment.** Add an S3 bucket + CloudFront distribution serving the Vue production build. Configure CloudFront error responses to return `index.html` for SPA client-side routing. Output the CloudFront URL.
+- [ ] **Step 11a — CI workflow (build + test).** Add a GitHub Actions workflow (`.github/workflows/ci.yml`) triggered on push/PR. Jobs: build the backend (`mvn package`), run backend tests (`mvn test`), build the frontend (`npm ci && npm run build`), run frontend tests (`npm test`). Fail the pipeline on any failure.
+- [ ] **Step 11b — CD workflow (deploy).** Add a deploy workflow (`.github/workflows/deploy.yml`) triggered on push to `main`. Build and push the backend container to ECR. Deploy infrastructure via `cdk deploy`. Sync `frontend/dist/` to S3 and invalidate CloudFront. Use GitHub environment secrets for AWS credentials and environment-specific config (DB endpoint, JWT issuer, CORS origins).
 
 ## Phase 6 — Tests
 

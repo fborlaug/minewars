@@ -20,27 +20,37 @@
 ```
 minewars/
 ├── PLAN.md
+├── README.md
 ├── agent.md
+├── docker-compose.yml             # PostgreSQL 17
 ├── backend/
 │   ├── pom.xml
+│   ├── README.md
 │   └── src/main/
 │       ├── java/com/frobotics/minewars/
 │       │   ├── HelloResource.java    # GET /api/hello
 │       │   ├── AuthResource.java     # POST /api/auth/register, /api/auth/login
+│       │   ├── AuthRequest.java      # Request record with validation
+│       │   ├── AuthResponse.java     # Response record (token + username)
+│       │   ├── Errors.java           # WebApplicationException factory
 │       │   ├── Player.java           # JPA entity (PanacheEntity)
 │       │   └── TokenService.java     # JWT generation (RSA-signed)
 │       └── resources/
 │           ├── application.properties
 │           ├── privateKey.pem         # RSA private key (signing)
-│           └── publicKey.pem          # RSA public key (verification)
+│           ├── publicKey.pem          # RSA public key (verification)
+│           └── db/migration/
+│               └── V1__create_player_table.sql
 └── frontend/
     ├── package.json
+    ├── README.md
     ├── vite.config.ts
     └── src/
         ├── main.ts
         ├── App.vue
         ├── router/index.ts           # Auth guard (meta.requiresAuth)
         ├── stores/auth.ts            # Pinia auth store (token + username)
+        ├── services/api.ts           # API helper
         └── views/
             ├── HomeView.vue
             ├── HelloView.vue          # Protected (requiresAuth)
@@ -54,7 +64,8 @@ minewars/
 - `quarkus-rest` — JAX-RS endpoints
 - `quarkus-rest-jackson` — JSON serialization
 - `quarkus-hibernate-orm-panache` — JPA entities
-- `quarkus-jdbc-h2` — H2 database
+- `quarkus-jdbc-postgresql` — PostgreSQL database
+- `quarkus-flyway` — database migrations
 - `quarkus-smallrye-jwt` — JWT verification
 - `quarkus-smallrye-jwt-build` — JWT generation
 - `quarkus-arc` — CDI / dependency injection
@@ -66,7 +77,8 @@ minewars/
 - Dev: `vite`, `@vitejs/plugin-vue`, `typescript`, `vue-tsc`, `npm-run-all2`
 
 ### Not yet added (add when the plan step requires them)
-- `quarkus-websockets-next` — real-time game play (Phase 7)
+- `quarkus-smallrye-health` — health checks (Step 10a)
+- `quarkus-websockets-next` — real-time game play (Phase 13)
 
 ## Conventions
 
@@ -80,17 +92,18 @@ minewars/
 
 - **Current phase:** Phase 5 — AWS CDK Deployment
 - **Last completed step:** Step 9 — Flyway migrations
-- **Next step:** Step 10 — CDK project setup
+- **Next step:** Step 10a — Backend container image
 
 ## Key Decisions
 
 | Decision     | Choice                   | Reason                                                  |
 |--------------|--------------------------|---------------------------------------------------------|
 | Dependencies | Minimal / YAGNI          | Add only when a plan step requires them                 |
-| Database | PostgreSQL 17 (Docker)   | Migrated from H2 in Step 8; Flyway manages schema      |
+| Database     | PostgreSQL 17 (Docker)   | Migrated from H2 in Step 8; Flyway manages schema       |
 | Auth         | RSA-signed JWT, jBCrypt  | Standard Quarkus SmallRye JWT + simple bcrypt hashing   |
 | Game model   | Real-time simultaneous   | Both players click freely, no turns                     |
-| Deployment   | Deferred                 | Will be a separate future plan                          |
+| Deployment   | AWS CDK + GitHub Actions | ECS Fargate (backend), S3 + CloudFront (frontend)       |
+| CI/CD        | GitHub Actions           | CI on push/PR, CD on merge to main                      |
 
 
 ## Session Log
@@ -103,3 +116,4 @@ minewars/
 | 2026-03-21 | Project review & cleanup: removed 6 unused backend deps (hibernate, jackson, security, jwt, websockets, h2), removed pinia from frontend, stripped H2/Hibernate config, bumped Quarkus 3.32.3→3.32.4, surefire 3.5.4→3.5.5, all frontend deps to latest. Fixed quarkus-maven-plugin groupId. YAGNI policy adopted. |
 | 2026-03-21 | Phase 3 complete: Player entity (Panache), AuthResource (register + login), JWT generation (RSA, 24h expiry), jBCrypt password hashing, H2 datasource. Frontend: Pinia auth store, LoginView, RegisterView, router auth guard, nav with login/logout. All endpoints verified via curl.                             |
 | 2026-03-26 | Phase 4 complete (Steps 8-9): Migrated to PostgreSQL 17 (Docker, port 5433) + Flyway. Replaced quarkus-jdbc-h2 with quarkus-jdbc-postgresql, added quarkus-flyway, docker-compose.yml, V1 migration. Fixed player_SEQ sequence issue (PanacheEntity uses SEQUENCE strategy, not IDENTITY). All endpoints verified.  |
+| 2026-03-27 | Housekeeping: added root README.md, updated backend + frontend READMEs, split Step 10 into 10a–10d and Step 11 into 11a–11b in PLAN.md, updated agent.md to match current project state.                                                                                                                           |
