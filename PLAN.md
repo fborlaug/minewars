@@ -27,7 +27,7 @@ A competitive 2-player minesweeper web game. **Backend**: Quarkus 3.32.4, Java 2
 
 ## Phase 5 — AWS CDK Deployment
 
-- [ ] **Step 10a — Backend container image.** Add the `quarkus-smallrye-health` extension to `pom.xml`. Create a production `Dockerfile` that builds the Quarkus app and runs `quarkus-run.jar`. Verify locally with `docker build` and `docker run` (connecting to the local PostgreSQL).
+- [x] **Step 10a — Backend container image.** Add the `quarkus-smallrye-health` extension to `pom.xml`. Create a production `Dockerfile` that builds the Quarkus app and runs `quarkus-run.jar`. Verify locally with `docker build` and `docker run` (connecting to the local PostgreSQL).
 - [ ] **Step 10b — CDK project + networking.** Create an `infra/` folder at the project root with an AWS CDK app (TypeScript). Define a VPC with public and private subnets. Define an RDS PostgreSQL instance in a private subnet with a security group allowing access only from the backend service.
 - [ ] **Step 10c — Backend deployment.** Add an ECS Fargate service behind an ALB running the backend container image (pushed to ECR). Pass DB credentials via Secrets Manager and JWT/app config via environment variables. Health check on `/q/health`. Output the ALB URL.
 - [ ] **Step 10d — Frontend deployment.** Add an S3 bucket + CloudFront distribution serving the Vue production build. Configure CloudFront error responses to return `index.html` for SPA client-side routing. Output the CloudFront URL.

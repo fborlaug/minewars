@@ -24,6 +24,8 @@ minewars/
 ├── agent.md
 ├── docker-compose.yml             # PostgreSQL 17
 ├── backend/
+│   ├── Dockerfile                 # Multi-stage build (maven → eclipse-temurin:25-jre)
+│   ├── .dockerignore
 │   ├── pom.xml
 │   ├── README.md
 │   └── src/main/
@@ -68,6 +70,7 @@ minewars/
 - `quarkus-flyway` — database migrations
 - `quarkus-smallrye-jwt` — JWT verification
 - `quarkus-smallrye-jwt-build` — JWT generation
+- `quarkus-smallrye-health` — health checks (/q/health)
 - `quarkus-arc` — CDI / dependency injection
 - `org.mindrot:jbcrypt` — password hashing
 - `quarkus-junit` — testing (test scope)
@@ -77,7 +80,6 @@ minewars/
 - Dev: `vite`, `@vitejs/plugin-vue`, `typescript`, `vue-tsc`, `npm-run-all2`
 
 ### Not yet added (add when the plan step requires them)
-- `quarkus-smallrye-health` — health checks (Step 10a)
 - `quarkus-websockets-next` — real-time game play (Phase 13)
 
 ## Conventions
@@ -91,8 +93,8 @@ minewars/
 ## Current Status
 
 - **Current phase:** Phase 5 — AWS CDK Deployment
-- **Last completed step:** Step 9 — Flyway migrations
-- **Next step:** Step 10a — Backend container image
+- **Last completed step:** Step 10a — Backend container image
+- **Next step:** Step 10b — CDK project + networking
 
 ## Key Decisions
 

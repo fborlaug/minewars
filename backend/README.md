@@ -67,23 +67,28 @@ If you want to build an _über-jar_, execute the following command:
 
 The application, packaged as an _über-jar_, is now runnable using `java -jar target/*-runner.jar`.
 
-## Creating a native executable
+## Docker
 
-You can create a native executable using:
-
-```shell script
-./mvnw package -Dnative
-```
-
-Or, if you don't have GraalVM installed, you can run the native executable build in a container using:
+Build the application first, then the container image:
 
 ```shell script
-./mvnw package -Dnative -Dquarkus.native.container-build=true
+./mvnw package -DskipTests
+docker build -t minewars-backend .
 ```
 
-You can then execute your native executable with: `./target/backend-1.0-SNAPSHOT-runner`
+Run it (connecting to the local PostgreSQL on macOS):
 
-If you want to learn more about building native executables, please consult <https://quarkus.io/guides/maven-tooling>.
+```shell script
+docker run -p 8080:8080 \
+  -e QUARKUS_DATASOURCE_JDBC_URL=jdbc:postgresql://host.docker.internal:5433/minewars \
+  -e QUARKUS_DATASOURCE_USERNAME=minewars \
+  -e QUARKUS_DATASOURCE_PASSWORD=minewars \
+  minewars-backend
+```
+
+The container runs as a non-root user (UID 185) on `eclipse-temurin:25-jre`.
+
+Health check endpoint: `GET /q/health`
 
 ## Related Guides
 
@@ -94,4 +99,5 @@ If you want to learn more about building native executables, please consult <htt
 - SmallRye JWT Build ([guide](https://quarkus.io/guides/security-jwt-build)): Generate and sign JSON Web Tokens (companion to SmallRye JWT)
 - JDBC Driver - PostgreSQL ([guide](https://quarkus.io/guides/datasource)): Connect to the PostgreSQL database via JDBC
 - Flyway ([guide](https://quarkus.io/guides/flyway)): Handle your database schema migrations
+- SmallRye Health ([guide](https://quarkus.io/guides/smallrye-health)): Health check endpoints for liveness and readiness probes
 - jBCrypt: Password hashing using the bcrypt algorithm
