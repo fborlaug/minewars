@@ -90,6 +90,10 @@ The container runs as a non-root user (UID 185) on `eclipse-temurin:25-jre`.
 
 Health check endpoint: `GET /q/health`
 
+## Production Infrastructure
+
+Production resources (VPC, RDS PostgreSQL, Secrets Manager) are managed by AWS CDK in the `infra/` folder. See the [root README](../README.md) for details.
+
 ## Related Guides
 
 - Hibernate ORM with Panache ([guide](https://quarkus.io/guides/hibernate-orm-panache)): Simplify your persistence code for Hibernate ORM via the active record or the repository pattern
