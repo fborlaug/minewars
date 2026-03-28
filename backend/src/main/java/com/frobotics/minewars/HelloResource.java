@@ -13,7 +13,7 @@ public class HelloResource {
     @GET
     @Produces(MediaType.TEXT_PLAIN)
     public String hello() {
-        return "MineWars backend is alive";
+        return "MineWars backend is alive❇\uFE0F";
     }
 }
 

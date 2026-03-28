@@ -29,7 +29,7 @@ onMounted(async () => {
 
 <template>
   <main class="hello-view">
-    <h1>🔗 Backend Connection Test</h1>
+    <h1>🔗 Backend Connection Test 🚧</h1>
     <p v-if="loading">Loading…</p>
     <p v-else-if="error" class="error">❌ {{ error }}</p>
     <p v-else class="success">✅ {{ message }}</p>
