@@ -21,6 +21,7 @@
 ```
 minewars/
 ├── .github/workflows/ci.yml      # CI: build + test on push/PR
+├── .github/workflows/deploy.yml  # CD: deploy to AWS on push to main
 ├── PLAN.md
 ├── README.md
 ├── agent.md
@@ -99,9 +100,9 @@ minewars/
 
 ## Current Status
 
-- **Current phase:** Phase 5 — AWS CDK Deployment
-- **Last completed step:** Step 11a — CI workflow (build + test)
-- **Next step:** Step 11b — CD workflow (deploy)
+- **Current phase:** Phase 6 — Rate Limiting
+- **Last completed step:** Step 11b — CD workflow (deploy) — Phase 5 complete
+- **Next step:** Step 12 — Rate-limit auth endpoints
 
 ## Key Decisions
 
@@ -133,3 +134,4 @@ minewars/
 | 2026-03-27 | Step 10c complete: added ECS Fargate service (256 CPU, 512 MB, 1 task) behind ALB to MinewarsStack. Container built via fromAsset(backend/). Tasks in public subnets with assignPublicIp. DB credentials from Secrets Manager, JDBC URL from RDS endpoint. RDS SG ingress from backend SG on 5432. Health check /q/health. Output: BackendUrl. |
 | 2026-03-28 | Step 10d complete: added S3 bucket (private, DESTROY, autoDeleteObjects) + CloudFront distribution. Two origins: S3 via OAC (default) for static assets, ALB for /api/* and /q/* (no CORS needed). SPA routing via 403/404 -> /index.html. BucketDeployment from frontend/dist with cache invalidation. Output: FrontendUrl. |
 | 2026-03-28 | Step 11a complete: added .github/workflows/ci.yml. Backend job: Java 25 (Temurin), Maven caching, PostgreSQL 17 service container (port 5433), ./mvnw package. Frontend job: Node 24, npm caching, npm ci, type-check, build, test. Added placeholder "test" script to package.json. |
+| 2026-03-28 | Step 11b complete (Phase 5 done): added .github/workflows/deploy.yml. Triggered by CI workflow_run on main (success only). Sets up Java 25, Node 24, AWS credentials (OIDC). Builds backend (-DskipTests), frontend, installs CDK deps, runs cdk deploy --require-approval never. Secrets: AWS_ROLE_ARN, AWS_REGION. |

@@ -6,6 +6,7 @@ import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as ecs_patterns from 'aws-cdk-lib/aws-ecs-patterns';
 import { Platform } from 'aws-cdk-lib/aws-ecr-assets';
+import * as iam from 'aws-cdk-lib/aws-iam';
 import * as rds from 'aws-cdk-lib/aws-rds';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as s3deploy from 'aws-cdk-lib/aws-s3-deployment';
@@ -171,6 +172,32 @@ export class MinewarsStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'FrontendUrl', {
       value: `https://${distribution.distributionDomainName}`,
       description: 'CloudFront URL for the frontend',
+    });
+
+    // --- GitHub Actions OIDC provider + deploy role ---
+    const githubOidc = new iam.OpenIdConnectProvider(this, 'GitHubOidc', {
+      url: 'https://token.actions.githubusercontent.com',
+      clientIds: ['sts.amazonaws.com'],
+    });
+
+    const deployRole = new iam.Role(this, 'GitHubDeployRole', {
+      assumedBy: new iam.WebIdentityPrincipal(githubOidc.openIdConnectProviderArn, {
+        StringEquals: {
+          'token.actions.githubusercontent.com:aud': 'sts.amazonaws.com',
+        },
+        StringLike: {
+          'token.actions.githubusercontent.com:sub': 'repo:fborlaug/minewars:*',
+        },
+      }),
+      description: 'Role assumed by GitHub Actions to deploy via CDK',
+      managedPolicies: [
+        iam.ManagedPolicy.fromAwsManagedPolicyName('AdministratorAccess'),
+      ],
+    });
+
+    new cdk.CfnOutput(this, 'DeployRoleArn', {
+      value: deployRole.roleArn,
+      description: 'IAM role ARN for GitHub Actions deploy workflow',
     });
   }
 }

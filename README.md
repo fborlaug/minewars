@@ -23,12 +23,19 @@ minewars/
 └── docker-compose.yml  # PostgreSQL (local dev)
 ```
 
-## CI
+## CI / CD
 
-A GitHub Actions workflow (`.github/workflows/ci.yml`) runs on every push and PR:
+**CI** (`.github/workflows/ci.yml`) runs on every push and PR:
 
 - **Backend:** builds and tests with `./mvnw package` (Java 25, PostgreSQL 17 service container)
 - **Frontend:** runs `npm ci`, type-check, build, and test (Node 24)
+
+**CD** (`.github/workflows/deploy.yml`) runs after CI passes on `main`:
+
+- Builds backend (`-DskipTests`) and frontend
+- Runs `cdk deploy` — builds Docker image, pushes to ECR, updates ECS, syncs frontend to S3, invalidates CloudFront
+
+Requires two GitHub repository secrets: `AWS_ROLE_ARN` and `AWS_REGION`.
 
 ## Prerequisites
 
