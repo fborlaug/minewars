@@ -20,6 +20,7 @@
 
 ```
 minewars/
+├── .github/workflows/ci.yml      # CI: build + test on push/PR
 ├── PLAN.md
 ├── README.md
 ├── agent.md
@@ -99,8 +100,8 @@ minewars/
 ## Current Status
 
 - **Current phase:** Phase 5 — AWS CDK Deployment
-- **Last completed step:** Step 10d — Frontend deployment
-- **Next step:** Step 11a — CI workflow (build + test)
+- **Last completed step:** Step 11a — CI workflow (build + test)
+- **Next step:** Step 11b — CD workflow (deploy)
 
 ## Key Decisions
 
@@ -131,3 +132,4 @@ minewars/
 | 2026-03-27 | Step 10b complete: created infra/ CDK app (TypeScript). MinewarsStack defines VPC (public + isolated subnets, no NAT), RDS PostgreSQL 17 (db.t4g.micro, single-AZ, Secrets Manager credentials, RemovalPolicy.DESTROY), security group (no ingress yet). Outputs: DbEndpoint, DbSecretArn. Verified with cdk synth. |
 | 2026-03-27 | Step 10c complete: added ECS Fargate service (256 CPU, 512 MB, 1 task) behind ALB to MinewarsStack. Container built via fromAsset(backend/). Tasks in public subnets with assignPublicIp. DB credentials from Secrets Manager, JDBC URL from RDS endpoint. RDS SG ingress from backend SG on 5432. Health check /q/health. Output: BackendUrl. |
 | 2026-03-28 | Step 10d complete: added S3 bucket (private, DESTROY, autoDeleteObjects) + CloudFront distribution. Two origins: S3 via OAC (default) for static assets, ALB for /api/* and /q/* (no CORS needed). SPA routing via 403/404 -> /index.html. BucketDeployment from frontend/dist with cache invalidation. Output: FrontendUrl. |
+| 2026-03-28 | Step 11a complete: added .github/workflows/ci.yml. Backend job: Java 25 (Temurin), Maven caching, PostgreSQL 17 service container (port 5433), ./mvnw package. Frontend job: Node 22, npm caching, npm ci, type-check, build, test. Added placeholder "test" script to package.json. |

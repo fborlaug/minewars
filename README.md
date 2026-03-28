@@ -16,11 +16,19 @@ A competitive 2-player real-time minesweeper web game. Players log in, enter a l
 
 ```
 minewars/
+├── .github/workflows/  # CI (GitHub Actions)
 ├── backend/            # Quarkus REST API
 ├── frontend/           # Vue 3 SPA
 ├── infra/              # AWS CDK (VPC, RDS, ECS, CloudFront)
 └── docker-compose.yml  # PostgreSQL (local dev)
 ```
+
+## CI
+
+A GitHub Actions workflow (`.github/workflows/ci.yml`) runs on every push and PR:
+
+- **Backend:** builds and tests with `./mvnw package` (Java 25, PostgreSQL 17 service container)
+- **Frontend:** runs `npm ci`, type-check, build, and test (Node 22)
 
 ## Prerequisites
 
