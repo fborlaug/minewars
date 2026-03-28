@@ -92,7 +92,60 @@ Health check endpoint: `GET /q/health`
 
 ## Production Infrastructure
 
-Production resources (VPC, RDS PostgreSQL, Secrets Manager) are managed by AWS CDK in the `infra/` folder. See the [root README](../README.md) for details.
+Production is managed by AWS CDK in the `infra/` folder. The backend runs as an ECS Fargate service behind an ALB.
+
+| Resource         | Detail                                              |
+|------------------|-----------------------------------------------------|
+| ECS Fargate      | 256 CPU / 512 MB, 1 task, public subnet             |
+| ALB              | Health check on `/q/health`                         |
+| Container image  | Built from this directory via `ContainerImage.fromAsset` |
+| DB credentials   | Injected from Secrets Manager at runtime            |
+| JDBC URL         | Constructed from the RDS endpoint                   |
+
+**Pre-deploy:** build the application before running `cdk deploy`:
+
+```shell script
+./mvnw package -DskipTests
+```
+
+CDK builds the Docker image from the `target/quarkus-app/` output. See the [root README](../README.md) for CDK commands.
+
+## API Examples
+
+Replace `$HOST` with `http://localhost:8080` (local dev) or the ALB URL (production).
+
+### Health check
+
+```sh
+curl -s $HOST/q/health
+```
+
+### Register
+
+```sh
+curl -s -X POST $HOST/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"username":"testuser","password":"password123"}'
+```
+
+### Login
+
+```sh
+curl -s -X POST $HOST/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"testuser","password":"password123"}'
+```
+
+### Hello (protected — requires token)
+
+```sh
+TOKEN=$(curl -s -X POST $HOST/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"testuser","password":"password123"}' \
+  | grep -o '"token":"[^"]*"' | cut -d'"' -f4)
+
+curl -s $HOST/api/hello -H "Authorization: Bearer $TOKEN"
+```
 
 ## Related Guides
 

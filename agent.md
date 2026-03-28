@@ -13,7 +13,7 @@
 | Backend  | Quarkus 3.32.4, Java 25, Maven      | REST, JWT auth, Panache, Flyway |
 | Frontend | Vue 3, TypeScript, Vite 8, CSS      | Vue Router, Pinia             |
 | Database | PostgreSQL 17 (Docker, port 5433)    | Flyway migrations             |
-| Infra    | AWS CDK (TypeScript)                | VPC, RDS, Secrets Manager     |
+| Infra    | AWS CDK (TypeScript)                | VPC, RDS, ECS Fargate, ALB    |
 | Auth     | SmallRye JWT (RSA-signed)           | 24h token expiry              |
 
 ## Project Structure
@@ -46,7 +46,7 @@ minewars/
 │               └── V1__create_player_table.sql
 ├── infra/
 │   ├── bin/infra.ts               # CDK app entry point
-│   ├── lib/minewars-stack.ts      # VPC, RDS PostgreSQL 17, Secrets Manager
+│   ├── lib/minewars-stack.ts      # VPC, RDS, ECS Fargate + ALB, Secrets Manager
 │   ├── cdk.json
 │   └── package.json
 └── frontend/
@@ -99,8 +99,8 @@ minewars/
 ## Current Status
 
 - **Current phase:** Phase 5 — AWS CDK Deployment
-- **Last completed step:** Step 10b — CDK project + networking
-- **Next step:** Step 10c — Backend deployment
+- **Last completed step:** Step 10c — Backend deployment
+- **Next step:** Step 10d — Frontend deployment
 
 ## Key Decisions
 
@@ -112,6 +112,7 @@ minewars/
 | Game model   | Real-time simultaneous   | Both players click freely, no turns                     |
 | Deployment   | AWS CDK + GitHub Actions | ECS Fargate (backend), S3 + CloudFront (frontend)       |
 | Infra        | No NAT Gateway           | RDS in isolated subnet, saves ~$32/month                |
+| ECS          | Public subnet + public IP| Fargate pulls from ECR without NAT Gateway              |
 | CI/CD        | GitHub Actions           | CI on push/PR, CD on merge to main                      |
 
 
@@ -127,3 +128,4 @@ minewars/
 | 2026-03-26 | Phase 4 complete (Steps 8-9): Migrated to PostgreSQL 17 (Docker, port 5433) + Flyway. Replaced quarkus-jdbc-h2 with quarkus-jdbc-postgresql, added quarkus-flyway, docker-compose.yml, V1 migration. Fixed player_SEQ sequence issue (PanacheEntity uses SEQUENCE strategy, not IDENTITY). All endpoints verified.  |
 | 2026-03-27 | Housekeeping: added root README.md, updated backend + frontend READMEs, split Step 10 into 10a–10d and Step 11 into 11a–11b in PLAN.md, updated agent.md to match current project state.                                                                                                                           |
 | 2026-03-27 | Step 10b complete: created infra/ CDK app (TypeScript). MinewarsStack defines VPC (public + isolated subnets, no NAT), RDS PostgreSQL 17 (db.t4g.micro, single-AZ, Secrets Manager credentials, RemovalPolicy.DESTROY), security group (no ingress yet). Outputs: DbEndpoint, DbSecretArn. Verified with cdk synth. |
+| 2026-03-27 | Step 10c complete: added ECS Fargate service (256 CPU, 512 MB, 1 task) behind ALB to MinewarsStack. Container built via fromAsset(backend/). Tasks in public subnets with assignPublicIp. DB credentials from Secrets Manager, JDBC URL from RDS endpoint. RDS SG ingress from backend SG on 5432. Health check /q/health. Output: BackendUrl. |
