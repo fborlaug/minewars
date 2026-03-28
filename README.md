@@ -28,7 +28,7 @@ minewars/
 A GitHub Actions workflow (`.github/workflows/ci.yml`) runs on every push and PR:
 
 - **Backend:** builds and tests with `./mvnw package` (Java 25, PostgreSQL 17 service container)
-- **Frontend:** runs `npm ci`, type-check, build, and test (Node 22)
+- **Frontend:** runs `npm ci`, type-check, build, and test (Node 24)
 
 ## Prerequisites
 
@@ -36,7 +36,7 @@ A GitHub Actions workflow (`.github/workflows/ci.yml`) runs on every push and PR
 |------------|---------|----------------------------------|
 | Java       | 25      | `brew install openjdk@25`        |
 | Maven      | 3.9+    | Included via `./mvnw` wrapper    |
-| Node.js    | ≥20.19  | `brew install node`              |
+| Node.js    | ≥24     | `brew install node`              |
 | Docker     | 24+     | [Docker Desktop](https://www.docker.com/products/docker-desktop/) |
 | AWS CLI    | 2.x     | `brew install awscli`            |
 | AWS CDK    | 2.x     | `npm install -g aws-cdk`         |
