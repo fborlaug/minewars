@@ -40,6 +40,10 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ secrets.AWS_REGION }}
 
+      - name: Generate build-time JWT key
+        run: openssl genpkey -algorithm RSA -out src/main/resources/privateKey.pem -pkeyopt rsa_keygen_bits:2048 2>/dev/null
+        working-directory: backend
+
       - name: Build backend
         run: ./mvnw package -DskipTests
         working-directory: backend

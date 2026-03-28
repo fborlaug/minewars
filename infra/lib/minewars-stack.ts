@@ -10,6 +10,7 @@ import * as iam from 'aws-cdk-lib/aws-iam';
 import * as rds from 'aws-cdk-lib/aws-rds';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as s3deploy from 'aws-cdk-lib/aws-s3-deployment';
+import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 import { Construct } from 'constructs';
 
 export class MinewarsStack extends cdk.Stack {
@@ -55,6 +56,13 @@ export class MinewarsStack extends cdk.Stack {
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
 
+    // --- JWT signing keys (populated by scripts/generate-jwt-keys.sh) ---
+    const jwtKeys = new secretsmanager.Secret(this, 'JwtKeys', {
+      secretName: 'minewars/jwt-keys',
+      description: 'RSA key pair for JWT signing and verification',
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+    });
+
     // --- ECS Fargate backend service behind ALB ---
     const backend = new ecs_patterns.ApplicationLoadBalancedFargateService(this, 'Backend', {
       vpc,
@@ -80,6 +88,8 @@ export class MinewarsStack extends cdk.Stack {
         secrets: {
           QUARKUS_DATASOURCE_USERNAME: ecs.Secret.fromSecretsManager(db.secret!, 'username'),
           QUARKUS_DATASOURCE_PASSWORD: ecs.Secret.fromSecretsManager(db.secret!, 'password'),
+          SMALLRYE_JWT_SIGN_KEY: ecs.Secret.fromSecretsManager(jwtKeys, 'privateKey'),
+          MP_JWT_VERIFY_PUBLICKEY: ecs.Secret.fromSecretsManager(jwtKeys, 'publicKey'),
         },
       },
     });
@@ -162,6 +172,11 @@ export class MinewarsStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'DbSecretArn', {
       value: db.secret!.secretArn,
       description: 'Secrets Manager ARN for DB credentials',
+    });
+
+    new cdk.CfnOutput(this, 'JwtKeysSecretName', {
+      value: jwtKeys.secretName,
+      description: 'Secrets Manager name for JWT keys — run scripts/generate-jwt-keys.sh to populate',
     });
 
     new cdk.CfnOutput(this, 'BackendUrl', {

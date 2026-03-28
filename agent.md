@@ -48,9 +48,11 @@ minewars/
 │               └── V1__create_player_table.sql
 ├── infra/
 │   ├── bin/infra.ts               # CDK app entry point
-│   ├── lib/minewars-stack.ts      # VPC, RDS, ECS Fargate + ALB, Secrets Manager
+│   ├── lib/minewars-stack.ts      # VPC, RDS, ECS Fargate + ALB, S3, CloudFront, OIDC, JWT keys
 │   ├── cdk.json
 │   └── package.json
+├── scripts/
+│   └── generate-jwt-keys.sh       # One-time: generate RSA keys → Secrets Manager
 └── frontend/
     ├── package.json
     ├── README.md
@@ -110,7 +112,7 @@ minewars/
 |--------------|--------------------------|---------------------------------------------------------|
 | Dependencies | Minimal / YAGNI          | Add only when a plan step requires them                 |
 | Database     | PostgreSQL 17 (Docker)   | Migrated from H2 in Step 8; Flyway manages schema       |
-| Auth         | RSA-signed JWT, jBCrypt  | Standard Quarkus SmallRye JWT + simple bcrypt hashing   |
+| Auth         | RSA-signed JWT, jBCrypt  | Keys in Secrets Manager (prod), classpath files (dev)   |
 | Game model   | Real-time simultaneous   | Both players click freely, no turns                     |
 | Deployment   | AWS CDK + GitHub Actions | ECS Fargate (backend), S3 + CloudFront (frontend)       |
 | Infra        | No NAT Gateway           | RDS in isolated subnet, saves ~$32/month                |

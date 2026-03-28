@@ -16,10 +16,11 @@ A competitive 2-player real-time minesweeper web game. Players log in, enter a l
 
 ```
 minewars/
-├── .github/workflows/  # CI (GitHub Actions)
+├── .github/workflows/  # CI/CD (GitHub Actions)
 ├── backend/            # Quarkus REST API
 ├── frontend/           # Vue 3 SPA
 ├── infra/              # AWS CDK (VPC, RDS, ECS, CloudFront)
+├── scripts/            # One-time setup scripts
 └── docker-compose.yml  # PostgreSQL (local dev)
 ```
 
@@ -114,6 +115,14 @@ cdk synth       # preview the CloudFormation template
 cdk deploy      # create/update resources
 cdk destroy     # tear down everything
 ```
+
+**4. Generate JWT signing keys** (one-time, after first `cdk deploy`):
+
+```sh
+./scripts/generate-jwt-keys.sh
+```
+
+This generates an RSA key pair and stores it in Secrets Manager (`minewars/jwt-keys`). The ECS service reads the keys at runtime. Redeploy or restart the ECS service to pick them up.
 
 > **Cost note:** the current stack provisions an RDS `db.t4g.micro` instance (~$12/month). Run `cdk destroy` when not in use to avoid charges.
 
