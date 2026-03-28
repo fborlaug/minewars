@@ -30,59 +30,63 @@ A competitive 2-player minesweeper web game. **Backend**: Quarkus 3.32.4, Java 2
 - [x] **Step 10a — Backend container image.** Add the `quarkus-smallrye-health` extension to `pom.xml`. Create a production `Dockerfile` that builds the Quarkus app and runs `quarkus-run.jar`. Verify locally with `docker build` and `docker run` (connecting to the local PostgreSQL).
 - [x] **Step 10b — CDK project + networking.** Run `cdk init app --language typescript` in a new `infra/` folder. Define a single stack containing: a VPC with public and private isolated subnets (no NAT Gateway — RDS doesn't need outbound internet); an RDS PostgreSQL 17 instance (`db.t4g.micro`, single-AZ) in the isolated subnet with credentials auto-generated into Secrets Manager; a security group for RDS with no ingress rules yet (Step 10c will add ingress from the backend service). Set `RemovalPolicy.DESTROY` and `deleteAutomatedBackups: true` on RDS for easy teardown. Output the RDS endpoint and secret ARN. Verify with `cdk synth`.
 - [x] **Step 10c — Backend deployment.** In `MinewarsStack`, add an ECS Fargate service using `ApplicationLoadBalancedFargateService`: build the container image from `../backend` via `ContainerImage.fromAsset`; place tasks in public subnets with `assignPublicIp: true` (avoids NAT Gateway costs); set `cpu: 256`, `memoryLimitMiB: 512`, `desiredCount: 1`. Pass DB credentials from the RDS Secrets Manager secret as container secrets (`QUARKUS_DATASOURCE_JDBC_URL`, `QUARKUS_DATASOURCE_USERNAME`, `QUARKUS_DATASOURCE_PASSWORD`). Set `MP_JWT_VERIFY_ISSUER=minewars` and `MINEWARS_JWT_EXPIRY=PT24H` as environment variables. Add an ingress rule on the RDS security group allowing port 5432 from the Fargate service security group. Configure the ALB health check on `/q/health`. Output the ALB URL. Verify with `cdk synth`.
-- [ ] **Step 10d — Frontend deployment.** Add an S3 bucket + CloudFront distribution serving the Vue production build. Configure CloudFront error responses to return `index.html` for SPA client-side routing. Output the CloudFront URL.
+- [ ] **Step 10d — Frontend deployment.** Build the frontend (`npm run build` in `frontend/`). In `MinewarsStack`, add a private S3 bucket (`removalPolicy: DESTROY`, `autoDeleteObjects: true`) with a `BucketDeployment` from `../frontend/dist`. Add a CloudFront distribution with two origins: the S3 bucket (default, via OAC) for static assets, and the ALB as a second origin for `/api/*` requests (eliminates CORS — single domain). Configure a custom error response returning `/index.html` with 200 for SPA client-side routing. Output the CloudFront URL. Verify with `cdk synth`.
 - [ ] **Step 11a — CI workflow (build + test).** Add a GitHub Actions workflow (`.github/workflows/ci.yml`) triggered on push/PR. Jobs: build the backend (`mvn package`), run backend tests (`mvn test`), build the frontend (`npm ci && npm run build`), run frontend tests (`npm test`). Fail the pipeline on any failure.
 - [ ] **Step 11b — CD workflow (deploy).** Add a deploy workflow (`.github/workflows/deploy.yml`) triggered on push to `main`. Build and push the backend container to ECR. Deploy infrastructure via `cdk deploy`. Sync `frontend/dist/` to S3 and invalidate CloudFront. Use GitHub environment secrets for AWS credentials and environment-specific config (DB endpoint, JWT issuer, CORS origins).
 
-## Phase 6 — Tests
+## Phase 6 — Rate Limiting
 
-- [ ] **Step 12 — Backend integration tests.** Add `@QuarkusTest` tests for `AuthResource`: register success, register duplicate (409), login success, login bad password (401), and register validation errors (400). Add a test for `HelloResource`: unauthenticated returns 401, authenticated returns 200. Use `rest-assured` (included with `quarkus-junit`). Verify all tests pass with `mvn test`.
-- [ ] **Step 13 — Frontend unit tests.** Install Vitest and `@vue/test-utils`. Add tests for the auth store (setAuth, logout, isLoggedIn with valid/expired/malformed tokens). Add component tests for `LoginView` and `RegisterView` (renders form, shows error on failed request, calls store on success). Add `"test": "vitest run"` script to `package.json`. Verify all tests pass with `npm test`.
+- [ ] **Step 12 — Rate-limit auth endpoints.** Add rate limiting to the registration and login endpoints to prevent abuse. Limit `POST /api/auth/register` to 5 requests per IP per hour. Limit `POST /api/auth/login` to 10 requests per IP per minute. Return HTTP `429 Too Many Requests` with a `Retry-After` header when exceeded. Use the Quarkus `quarkus-rate-limiter` extension or a simple in-memory bucket. Verify with repeated curl requests.
 
-## Phase 7 — Static Analysis & Vulnerability Scanning
+## Phase 7 — Tests
 
-- [ ] **Step 14 — Backend static analysis.** Configure the `maven-checkstyle-plugin` or SpotBugs for code quality checks. Add the OWASP `dependency-check-maven` plugin to scan backend dependencies for known CVEs. Run `mvn verify` and fix any findings.
-- [ ] **Step 15 — Frontend linting & audit.** Add ESLint with `@vue/eslint-config-typescript`. Add a `"lint": "eslint ."` script to `package.json`. Run `npm audit` to check for vulnerable dependencies. Fix any findings. Verify `npm run lint` and `npm audit` both pass clean.
-- [ ] **Step 16 — CI gate.** Add static analysis and vulnerability checks to the CI/CD pipeline (Phase 5). Backend: `mvn verify` (includes OWASP check). Frontend: `npm run lint && npm audit --audit-level=high`. Fail the build on any critical finding.
+- [ ] **Step 13 — Backend integration tests.** Add `@QuarkusTest` tests for `AuthResource`: register success, register duplicate (409), login success, login bad password (401), and register validation errors (400). Add a test for `HelloResource`: unauthenticated returns 401, authenticated returns 200. Use `rest-assured` (included with `quarkus-junit`). Verify all tests pass with `mvn test`.
+- [ ] **Step 14 — Frontend unit tests.** Install Vitest and `@vue/test-utils`. Add tests for the auth store (setAuth, logout, isLoggedIn with valid/expired/malformed tokens). Add component tests for `LoginView` and `RegisterView` (renders form, shows error on failed request, calls store on success). Add `"test": "vitest run"` script to `package.json`. Verify all tests pass with `npm test`.
 
-## Phase 8 — Observability (Logging, Tracing & Metrics)
+## Phase 8 — Static Analysis & Vulnerability Scanning
 
-- [ ] **Step 17 — Backend observability extensions.** Add `quarkus-opentelemetry` for distributed tracing, `quarkus-micrometer-registry-prometheus` for metrics, and configure structured JSON logging via `quarkus-logging-json`. Update `application.properties` with OTLP exporter endpoint and Prometheus scrape path (`/q/metrics`).
-- [ ] **Step 18 — Grafana stack (docker-compose).** Add Grafana, Prometheus, Loki, and Tempo to `docker-compose.yml`. Prometheus scrapes the Quarkus `/q/metrics` endpoint. Tempo receives OTLP traces. Loki collects JSON logs (via Docker log driver or Promtail). Grafana is pre-configured with all three as datasources.
-- [ ] **Step 19 — Dashboards & verification.** Create a Grafana dashboard (provisioned as JSON) showing: HTTP request rate/latency (from Prometheus), recent logs (from Loki), and trace lookup (from Tempo). Verify end-to-end: make API calls → see metrics in Grafana, logs searchable in Loki, traces visible in Tempo with span linking.
+- [ ] **Step 15 — Backend static analysis.** Configure the `maven-checkstyle-plugin` or SpotBugs for code quality checks. Add the OWASP `dependency-check-maven` plugin to scan backend dependencies for known CVEs. Run `mvn verify` and fix any findings.
+- [ ] **Step 16 — Frontend linting & audit.** Add ESLint with `@vue/eslint-config-typescript`. Add a `"lint": "eslint ."` script to `package.json`. Run `npm audit` to check for vulnerable dependencies. Fix any findings. Verify `npm run lint` and `npm audit` both pass clean.
+- [ ] **Step 17 — CI gate.** Add static analysis and vulnerability checks to the CI/CD pipeline (Phase 5). Backend: `mvn verify` (includes OWASP check). Frontend: `npm run lint && npm audit --audit-level=high`. Fail the build on any critical finding.
 
-## Phase 9 — Hexagonal Architecture
+## Phase 9 — Observability (Logging, Tracing & Metrics)
 
-- [ ] **Step 20 — Restructure packages.** Move classes into a hexagonal package layout: `domain/` (Player entity, business rules), `application/` (TokenService, future use-case services), `adapter/rest/` (AuthResource, HelloResource, DTOs). Dependencies point inward: adapter → application → domain. Verify the project compiles and all tests still pass.
+- [ ] **Step 18 — Backend observability extensions.** Add `quarkus-opentelemetry` for distributed tracing, `quarkus-micrometer-registry-prometheus` for metrics, and configure structured JSON logging via `quarkus-logging-json`. Update `application.properties` with OTLP exporter endpoint and Prometheus scrape path (`/q/metrics`).
+- [ ] **Step 19 — Grafana stack (docker-compose).** Add Grafana, Prometheus, Loki, and Tempo to `docker-compose.yml`. Prometheus scrapes the Quarkus `/q/metrics` endpoint. Tempo receives OTLP traces. Loki collects JSON logs (via Docker log driver or Promtail). Grafana is pre-configured with all three as datasources.
+- [ ] **Step 20 — Dashboards & verification.** Create a Grafana dashboard (provisioned as JSON) showing: HTTP request rate/latency (from Prometheus), recent logs (from Loki), and trace lookup (from Tempo). Verify end-to-end: make API calls → see metrics in Grafana, logs searchable in Loki, traces visible in Tempo with span linking.
 
-## Phase 10 — Lobby
+## Phase 10 — Hexagonal Architecture
 
-- [ ] **Step 21 — Backend lobby.** Create `LobbyResource.java` with `POST /api/lobby/create`, `GET /api/lobby/games` (list open games), `POST /api/lobby/join/{gameId}`. Introduce an in-memory `GameSession` model (id, player1, player2, status: WAITING / IN_PROGRESS / FINISHED).
-- [ ] **Step 22 — Frontend lobby page.** Create `LobbyView.vue` showing open games with a "Create Game" button and "Join" buttons. Poll or use SSE for live updates of available games.
+- [ ] **Step 21 — Restructure packages.** Move classes into a hexagonal package layout: `domain/` (Player entity, business rules), `application/` (TokenService, future use-case services), `adapter/rest/` (AuthResource, HelloResource, DTOs). Dependencies point inward: adapter → application → domain. Verify the project compiles and all tests still pass.
 
-## Phase 11 — Your Games
+## Phase 11 — Lobby
 
-- [ ] **Step 23 — Backend my-games endpoint.** Add `GET /api/lobby/my-games` returning the current player's active and past games with results.
-- [ ] **Step 24 — Frontend my-games page.** Create `MyGamesView.vue` showing game history (opponent, result, date).
+- [ ] **Step 22 — Backend lobby.** Create `LobbyResource.java` with `POST /api/lobby/create`, `GET /api/lobby/games` (list open games), `POST /api/lobby/join/{gameId}`. Introduce an in-memory `GameSession` model (id, player1, player2, status: WAITING / IN_PROGRESS / FINISHED).
+- [ ] **Step 23 — Frontend lobby page.** Create `LobbyView.vue` showing open games with a "Create Game" button and "Join" buttons. Poll or use SSE for live updates of available games.
 
-## Phase 12 — Draw the Board
+## Phase 12 — Your Games
 
-- [ ] **Step 25 — Board data model (backend).** Create a `Board` class: 2D grid of `Cell` (isMine, isRevealed, adjacentMineCount, revealedBy). Add a `BoardGenerator` service that places N mines randomly and computes adjacency counts.
-- [ ] **Step 26 — Board rendering (frontend).** Create `BoardComponent.vue` rendering an N×N grid of `CellComponent.vue` tiles using CSS grid. Cell states: hidden, revealed-number, revealed-bomb. Render a static test board first.
+- [ ] **Step 24 — Backend my-games endpoint.** Add `GET /api/lobby/my-games` returning the current player's active and past games with results.
+- [ ] **Step 25 — Frontend my-games page.** Create `MyGamesView.vue` showing game history (opponent, result, date).
 
-## Phase 13 — Game WebSocket & Real-Time Play
+## Phase 13 — Draw the Board
+
+- [ ] **Step 26 — Board data model (backend).** Create a `Board` class: 2D grid of `Cell` (isMine, isRevealed, adjacentMineCount, revealedBy). Add a `BoardGenerator` service that places N mines randomly and computes adjacency counts.
+- [ ] **Step 27 — Board rendering (frontend).** Create `BoardComponent.vue` rendering an N×N grid of `CellComponent.vue` tiles using CSS grid. Cell states: hidden, revealed-number, revealed-bomb. Render a static test board first.
+
+## Phase 14 — Game WebSocket & Real-Time Play
 
 Both players play simultaneously in real-time. There are no turns — each player clicks cells freely, and every reveal is instantly broadcast to both boards.
 
-- [ ] **Step 27 — Backend WebSocket endpoint.** Create `GameWebSocket.java` using `quarkus-websockets-next`. Authenticate via JWT token param on the connection. Client sends `REVEAL {row, col}` → server validates, updates the shared board, and broadcasts `CELL_REVEALED {row, col, value, player}` or `GAME_OVER {winner, reason}` to both players.
-- [ ] **Step 28 — Game state machine (backend).** Implement `GameEngine` service with `revealCell(gameId, player, row, col)`. Handle chain-reveal for zero-adjacent cells. Win/loss rules: bomb hit → that player loses immediately; all safe cells revealed → player with the most revealed cells wins.
-- [ ] **Step 29 — Frontend WebSocket integration.** Create a `useGameSocket` composable (connect, send reveal, handle incoming messages). Wire into `GameView.vue` — clicking a hidden cell sends `REVEAL`; incoming messages update the reactive board state on both players' screens in real-time.
+- [ ] **Step 28 — Backend WebSocket endpoint.** Create `GameWebSocket.java` using `quarkus-websockets-next`. Authenticate via JWT token param on the connection. Client sends `REVEAL {row, col}` → server validates, updates the shared board, and broadcasts `CELL_REVEALED {row, col, value, player}` or `GAME_OVER {winner, reason}` to both players.
+- [ ] **Step 29 — Game state machine (backend).** Implement `GameEngine` service with `revealCell(gameId, player, row, col)`. Handle chain-reveal for zero-adjacent cells. Win/loss rules: bomb hit → that player loses immediately; all safe cells revealed → player with the most revealed cells wins.
+- [ ] **Step 30 — Frontend WebSocket integration.** Create a `useGameSocket` composable (connect, send reveal, handle incoming messages). Wire into `GameView.vue` — clicking a hidden cell sends `REVEAL`; incoming messages update the reactive board state on both players' screens in real-time.
 
-## Phase 14 — Incremental Game Features (one at a time)
+## Phase 15 — Incremental Game Features (one at a time)
 
-- [ ] **Step 30 — Player info overlay.** Show both player names and live revealed-cell counts on the game screen.
-- [ ] **Step 31 — Game timer.** Add a backend-authoritative game clock. Display elapsed time or countdown in `GameView.vue`.
-- [ ] **Step 32 — Spectator mode.** Allow other users to watch a live game via a read-only WebSocket subscription.
-- [ ] **Step 33 — Rematch / play-again.** After the game is over, offer a "Rematch" button that creates a new game with the same opponent.
-- [ ] **Step 34 — Leaderboard.** `GET /api/leaderboard` → top players by wins. `LeaderboardView.vue` to display.
-- [ ] **Step 35 — Polish.** Animations on cell reveal, sound effects, responsive CSS, dark/light theme toggle.
+- [ ] **Step 31 — Player info overlay.** Show both player names and live revealed-cell counts on the game screen.
+- [ ] **Step 32 — Game timer.** Add a backend-authoritative game clock. Display elapsed time or countdown in `GameView.vue`.
+- [ ] **Step 33 — Spectator mode.** Allow other users to watch a live game via a read-only WebSocket subscription.
+- [ ] **Step 34 — Rematch / play-again.** After the game is over, offer a "Rematch" button that creates a new game with the same opponent.
+- [ ] **Step 35 — Leaderboard.** `GET /api/leaderboard` → top players by wins. `LeaderboardView.vue` to display.
+- [ ] **Step 36 — Polish.** Animations on cell reveal, sound effects, responsive CSS, dark/light theme toggle.
