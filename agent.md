@@ -39,6 +39,7 @@ minewars/
 │       │   ├── AuthResponse.java     # Response record (token + username)
 │       │   ├── Errors.java           # WebApplicationException factory
 │       │   ├── Player.java           # JPA entity (PanacheEntity)
+│       │   ├── RateLimitFilter.java  # Per-IP rate limiter (JAX-RS filter)
 │       │   └── TokenService.java     # JWT generation (RSA-signed)
 │       └── resources/
 │           ├── application.properties
@@ -102,9 +103,9 @@ minewars/
 
 ## Current Status
 
-- **Current phase:** Phase 6 — Rate Limiting
-- **Last completed step:** Step 11b — CD workflow (deploy) — Phase 5 complete
-- **Next step:** Step 12 — Rate-limit auth endpoints
+- **Current phase:** Phase 7 — Tests
+- **Last completed step:** Step 12 — Rate-limit auth endpoints — Phase 6 complete
+- **Next step:** Step 13 — Backend integration tests
 
 ## Key Decisions
 
@@ -137,3 +138,4 @@ minewars/
 | 2026-03-28 | Step 10d complete: added S3 bucket (private, DESTROY, autoDeleteObjects) + CloudFront distribution. Two origins: S3 via OAC (default) for static assets, ALB for /api/* and /q/* (no CORS needed). SPA routing via 403/404 -> /index.html. BucketDeployment from frontend/dist with cache invalidation. Output: FrontendUrl. |
 | 2026-03-28 | Step 11a complete: added .github/workflows/ci.yml. Backend job: Java 25 (Temurin), Maven caching, PostgreSQL 17 service container (port 5433), ./mvnw package. Frontend job: Node 24, npm caching, npm ci, type-check, build, test. Added placeholder "test" script to package.json. |
 | 2026-03-28 | Step 11b complete (Phase 5 done): added .github/workflows/deploy.yml. Triggered by CI workflow_run on main (success only). Sets up Java 25, Node 24, AWS credentials (OIDC). Builds backend (-DskipTests), frontend, installs CDK deps, runs cdk deploy --require-approval never. Secrets: AWS_ROLE_ARN, AWS_REGION. |
+| 2026-03-29 | Step 12 complete (Phase 6 done): added RateLimitFilter.java — JAX-RS ContainerRequestFilter with in-memory ConcurrentHashMap per-IP buckets. Register: 100/5min, Login: 50/5min. POST-only, uses X-Forwarded-For. Returns 429 + Retry-After. Stale buckets evicted on access. No new dependencies. Verified with curl. |

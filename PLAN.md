@@ -36,7 +36,7 @@ A competitive 2-player minesweeper web game. **Backend**: Quarkus 3.32.4, Java 2
 
 ## Phase 6 — Rate Limiting
 
-- [ ] **Step 12 — Rate-limit auth endpoints.** Add rate limiting to the registration and login endpoints to prevent abuse. Limit `POST /api/auth/register` to 5 requests per IP per hour. Limit `POST /api/auth/login` to 10 requests per IP per minute. Return HTTP `429 Too Many Requests` with a `Retry-After` header when exceeded. Use the Quarkus `quarkus-rate-limiter` extension or a simple in-memory bucket. Verify with repeated curl requests.
+- [x] **Step 12 — Rate-limit auth endpoints.** Add a `RateLimitFilter.java` JAX-RS `ContainerRequestFilter` with an in-memory `ConcurrentHashMap<String, TokenBucket>` to rate-limit by client IP (from `X-Forwarded-For` behind ALB/CloudFront). Limit `POST /api/auth/register` to 100 requests per IP per 5 minutes. Limit `POST /api/auth/login` to 50 requests per IP per 5 minutes. Return HTTP `429 Too Many Requests` with a `Retry-After` header when exceeded. No new dependencies — pure Java. Works for single-instance (`desiredCount: 1`). Verify with repeated curl requests.
 
 ## Phase 7 — Tests
 
