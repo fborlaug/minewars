@@ -13,7 +13,7 @@
 | Backend  | Quarkus 3.32.4, Java 25, Maven      | REST, JWT auth, Panache, Flyway |
 | Frontend | Vue 3, TypeScript, Vite 8, CSS      | Vue Router, Pinia             |
 | Database | PostgreSQL 17 (Docker, port 5433)    | Flyway migrations             |
-| Infra    | AWS CDK (TypeScript)                | VPC, RDS, ECS Fargate, ALB    |
+| Infra    | AWS CDK (TypeScript)                | VPC, RDS, ECS Fargate, ALB, S3, CloudFront |
 | Auth     | SmallRye JWT (RSA-signed)           | 24h token expiry              |
 
 ## Project Structure
@@ -99,8 +99,8 @@ minewars/
 ## Current Status
 
 - **Current phase:** Phase 5 — AWS CDK Deployment
-- **Last completed step:** Step 10c — Backend deployment
-- **Next step:** Step 10d — Frontend deployment
+- **Last completed step:** Step 10d — Frontend deployment
+- **Next step:** Step 11a — CI workflow (build + test)
 
 ## Key Decisions
 
@@ -113,6 +113,7 @@ minewars/
 | Deployment   | AWS CDK + GitHub Actions | ECS Fargate (backend), S3 + CloudFront (frontend)       |
 | Infra        | No NAT Gateway           | RDS in isolated subnet, saves ~$32/month                |
 | ECS          | Public subnet + public IP| Fargate pulls from ECR without NAT Gateway              |
+| CloudFront   | Single-domain proxy      | /api/* and /q/* route to ALB, no CORS needed            |
 | CI/CD        | GitHub Actions           | CI on push/PR, CD on merge to main                      |
 
 
@@ -129,3 +130,4 @@ minewars/
 | 2026-03-27 | Housekeeping: added root README.md, updated backend + frontend READMEs, split Step 10 into 10a–10d and Step 11 into 11a–11b in PLAN.md, updated agent.md to match current project state.                                                                                                                           |
 | 2026-03-27 | Step 10b complete: created infra/ CDK app (TypeScript). MinewarsStack defines VPC (public + isolated subnets, no NAT), RDS PostgreSQL 17 (db.t4g.micro, single-AZ, Secrets Manager credentials, RemovalPolicy.DESTROY), security group (no ingress yet). Outputs: DbEndpoint, DbSecretArn. Verified with cdk synth. |
 | 2026-03-27 | Step 10c complete: added ECS Fargate service (256 CPU, 512 MB, 1 task) behind ALB to MinewarsStack. Container built via fromAsset(backend/). Tasks in public subnets with assignPublicIp. DB credentials from Secrets Manager, JDBC URL from RDS endpoint. RDS SG ingress from backend SG on 5432. Health check /q/health. Output: BackendUrl. |
+| 2026-03-28 | Step 10d complete: added S3 bucket (private, DESTROY, autoDeleteObjects) + CloudFront distribution. Two origins: S3 via OAC (default) for static assets, ALB for /api/* and /q/* (no CORS needed). SPA routing via 403/404 -> /index.html. BucketDeployment from frontend/dist with cache invalidation. Output: FrontendUrl. |

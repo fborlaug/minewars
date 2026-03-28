@@ -96,23 +96,24 @@ Production is managed by AWS CDK in the `infra/` folder. The backend runs as an 
 
 | Resource         | Detail                                              |
 |------------------|-----------------------------------------------------|
-| ECS Fargate      | 256 CPU / 512 MB, 1 task, public subnet             |
+| ECS Fargate      | 256 CPU / 512 MB, 1 task, public subnet (ARM64)     |
 | ALB              | Health check on `/q/health`                         |
+| CloudFront       | Proxies `/api/*` and `/q/*` to ALB (no CORS needed) |
 | Container image  | Built from this directory via `ContainerImage.fromAsset` |
 | DB credentials   | Injected from Secrets Manager at runtime            |
 | JDBC URL         | Constructed from the RDS endpoint                   |
 
-**Pre-deploy:** build the application before running `cdk deploy`:
+**Pre-deploy:** build both the backend and frontend before running `cdk deploy`:
 
 ```shell script
 ./mvnw package -DskipTests
+cd ../frontend && npm run build
+cd ../infra && cdk deploy
 ```
-
-CDK builds the Docker image from the `target/quarkus-app/` output. See the [root README](../README.md) for CDK commands.
 
 ## API Examples
 
-Replace `$HOST` with `http://localhost:8080` (local dev) or the ALB URL (production).
+Replace `$HOST` with `http://localhost:8080` (local dev) or the CloudFront URL (production).
 
 ### Health check
 

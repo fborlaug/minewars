@@ -1,10 +1,14 @@
 import * as path from 'node:path';
 import * as cdk from 'aws-cdk-lib/core';
+import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
+import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as ecs_patterns from 'aws-cdk-lib/aws-ecs-patterns';
 import { Platform } from 'aws-cdk-lib/aws-ecr-assets';
 import * as rds from 'aws-cdk-lib/aws-rds';
+import * as s3 from 'aws-cdk-lib/aws-s3';
+import * as s3deploy from 'aws-cdk-lib/aws-s3-deployment';
 import { Construct } from 'constructs';
 
 export class MinewarsStack extends cdk.Stack {
@@ -92,6 +96,62 @@ export class MinewarsStack extends cdk.Stack {
       'Allow backend Fargate service',
     );
 
+    // --- S3 bucket for frontend static assets ---
+    const siteBucket = new s3.Bucket(this, 'FrontendBucket', {
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+      autoDeleteObjects: true,
+      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+    });
+
+    // --- CloudFront distribution ---
+    const distribution = new cloudfront.Distribution(this, 'Distribution', {
+      defaultBehavior: {
+        origin: origins.S3BucketOrigin.withOriginAccessControl(siteBucket),
+        viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+      },
+      additionalBehaviors: {
+        '/api/*': {
+          origin: new origins.LoadBalancerV2Origin(backend.loadBalancer, {
+            protocolPolicy: cloudfront.OriginProtocolPolicy.HTTP_ONLY,
+          }),
+          viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+          allowedMethods: cloudfront.AllowedMethods.ALLOW_ALL,
+          cachePolicy: cloudfront.CachePolicy.CACHING_DISABLED,
+          originRequestPolicy: cloudfront.OriginRequestPolicy.ALL_VIEWER,
+        },
+        '/q/*': {
+          origin: new origins.LoadBalancerV2Origin(backend.loadBalancer, {
+            protocolPolicy: cloudfront.OriginProtocolPolicy.HTTP_ONLY,
+          }),
+          viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+          allowedMethods: cloudfront.AllowedMethods.ALLOW_ALL,
+          cachePolicy: cloudfront.CachePolicy.CACHING_DISABLED,
+          originRequestPolicy: cloudfront.OriginRequestPolicy.ALL_VIEWER,
+        },
+      },
+      defaultRootObject: 'index.html',
+      errorResponses: [
+        {
+          httpStatus: 403,
+          responseHttpStatus: 200,
+          responsePagePath: '/index.html',
+        },
+        {
+          httpStatus: 404,
+          responseHttpStatus: 200,
+          responsePagePath: '/index.html',
+        },
+      ],
+    });
+
+    // Deploy frontend build to S3
+    new s3deploy.BucketDeployment(this, 'DeployFrontend', {
+      sources: [s3deploy.Source.asset(path.join(__dirname, '..', '..', 'frontend', 'dist'))],
+      destinationBucket: siteBucket,
+      distribution,
+      distributionPaths: ['/*'],
+    });
+
     // --- Outputs ---
     new cdk.CfnOutput(this, 'DbEndpoint', {
       value: db.dbInstanceEndpointAddress,
@@ -106,6 +166,11 @@ export class MinewarsStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'BackendUrl', {
       value: `http://${backend.loadBalancer.loadBalancerDnsName}`,
       description: 'ALB URL for the backend API',
+    });
+
+    new cdk.CfnOutput(this, 'FrontendUrl', {
+      value: `https://${distribution.distributionDomainName}`,
+      description: 'CloudFront URL for the frontend',
     });
   }
 }
