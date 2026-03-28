@@ -60,6 +60,9 @@ export class MinewarsStack extends cdk.Stack {
     const jwtKeys = new secretsmanager.Secret(this, 'JwtKeys', {
       secretName: 'minewars/jwt-keys',
       description: 'RSA key pair for JWT signing and verification',
+      secretStringValue: cdk.SecretValue.unsafePlainText(
+        JSON.stringify({ privateKey: 'PLACEHOLDER', publicKey: 'PLACEHOLDER' }),
+      ),
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
 
