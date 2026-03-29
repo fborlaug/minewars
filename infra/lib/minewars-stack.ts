@@ -74,6 +74,7 @@ export class MinewarsStack extends cdk.Stack {
       cpu: 256,
       memoryLimitMiB: 512,
       desiredCount: 1,
+      enableExecuteCommand: true,
       runtimePlatform: {
         cpuArchitecture: ecs.CpuArchitecture.ARM64,
         operatingSystemFamily: ecs.OperatingSystemFamily.LINUX,
