@@ -131,4 +131,5 @@ This generates an RSA key pair and stores it in Secrets Manager (`minewars/jwt-k
 - [Backend README](backend/README.md)
 - [Frontend README](frontend/README.md)
 - [Development Plan](PLAN.md)
-
+- [Troubleshooting](docs/troubleshooting.md)
+- [ECS Exec / psql](docs/execsql.md)

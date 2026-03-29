@@ -1,5 +1,5 @@
 # CI — Build and test on every push/PR to main.
-# Backend: Java 25, PostgreSQL 17, Maven (compile + test + package).
+# Backend: Java 25 (non-LTS), PostgreSQL 17, Maven (compile + test + package + verify).
 # Frontend: Node 24, npm (install, type-check, build, test).
 # Both jobs run in parallel. Pipeline fails if either job fails.
 
@@ -11,13 +11,15 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   backend:
     name: Backend
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: backend
     # PostgreSQL service container for integration tests (port 5433 to match application.properties)
     services:
       postgres:
@@ -40,29 +42,30 @@ jobs:
           distribution: temurin
           java-version: '25'
           cache: maven
-      # privateKey.pem is gitignored — generate a throwaway key for build/tests
-      - name: Generate test JWT key
-        run: openssl genpkey -algorithm RSA -out src/main/resources/privateKey.pem -pkeyopt rsa_keygen_bits:2048 2>/dev/null
-        working-directory: backend
-      # mvnw package = compile + test + package (tests run against the PostgreSQL service above)
-      - run: ./mvnw package
-        working-directory: backend
+      # JWT keys are gitignored — generate a throwaway pair for build/tests
+      - name: Generate test JWT keys
+        run: |
+          set -euo pipefail
+          openssl genpkey -algorithm RSA -out src/main/resources/privateKey.pem -pkeyopt rsa_keygen_bits:2048
+          openssl rsa -in src/main/resources/privateKey.pem -pubout -out src/main/resources/publicKey.pem
+      # verify = compile + test + package + integration tests (against the PostgreSQL service above)
+      - run: ./mvnw verify
 
   frontend:
     name: Frontend
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: frontend
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
         with:
-          node-version: '24'
+          node-version-file: frontend/package.json
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci              # clean install from lockfile
-        working-directory: frontend
       - run: npm run type-check  # vue-tsc — TypeScript compilation check
-        working-directory: frontend
       - run: npm run build       # vite production build
-        working-directory: frontend
-      - run: npm test            # vitest (placeholder until Phase 7)
-        working-directory: frontend
+      - run: npm test            # placeholder until Phase 7
