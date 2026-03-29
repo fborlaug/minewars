@@ -25,6 +25,16 @@ aws ecs execute-command \
   --command "/bin/sh"
 ```
 
+## Install psql (inside the container)
+
+`psql` is not pre-installed in the container. Install it manually when needed:
+
+```sh
+apt-get update && apt-get install -y postgresql-client
+```
+
+> **Note:** This installation is temporary — it's lost when the container restarts or a new deployment happens. This is intentional to keep the Docker image small and the deploy fast.
+
 ## Start psql (inside the container)
 
 The database credentials are injected as environment variables by ECS:
@@ -48,7 +58,6 @@ psql "host=$(echo $QUARKUS_DATASOURCE_JDBC_URL | sed 's|jdbc:postgresql://||;s|:
 
 ## Notes
 
-- `psql` is available because `postgresql-client` is installed in the Dockerfile.
 - ECS Exec must be enabled on the Fargate service (`enableExecuteCommand: true` in CDK).
 - The session ends when you type `exit` or the task is replaced during a deployment.
-
+- The container runs as root during ECS Exec, so `apt-get install` works without `sudo`.

@@ -64,4 +64,3 @@ jobs:
       - name: Deploy
         run: npx cdk deploy --require-approval never
         working-directory: infra
-

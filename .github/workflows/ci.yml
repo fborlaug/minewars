@@ -1,6 +1,11 @@
+# CI — Build and test on every push/PR to main.
+# Backend: Java 25, PostgreSQL 17, Maven (compile + test + package).
+# Frontend: Node 24, npm (install, type-check, build, test).
+# Both jobs run in parallel. Pipeline fails if either job fails.
+
 name: CI
 permissions:
-  contents: read
+  contents: read  # read-only — no write access to the repo
 on:
   push:
     branches: [main]
@@ -13,6 +18,7 @@ jobs:
   backend:
     name: Backend
     runs-on: ubuntu-latest
+    # PostgreSQL service container for integration tests (port 5433 to match application.properties)
     services:
       postgres:
         image: postgres:17
@@ -34,9 +40,11 @@ jobs:
           distribution: temurin
           java-version: '25'
           cache: maven
+      # privateKey.pem is gitignored — generate a throwaway key for build/tests
       - name: Generate test JWT key
         run: openssl genpkey -algorithm RSA -out src/main/resources/privateKey.pem -pkeyopt rsa_keygen_bits:2048 2>/dev/null
         working-directory: backend
+      # mvnw package = compile + test + package (tests run against the PostgreSQL service above)
       - run: ./mvnw package
         working-directory: backend
 
@@ -50,11 +58,11 @@ jobs:
           node-version: '24'
           cache: npm
           cache-dependency-path: frontend/package-lock.json
-      - run: npm ci
+      - run: npm ci              # clean install from lockfile
         working-directory: frontend
-      - run: npm run type-check
+      - run: npm run type-check  # vue-tsc — TypeScript compilation check
         working-directory: frontend
-      - run: npm run build
+      - run: npm run build       # vite production build
         working-directory: frontend
-      - run: npm test
+      - run: npm test            # vitest (placeholder until Phase 7)
         working-directory: frontend
