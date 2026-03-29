@@ -1,3 +1,7 @@
+# Deploy — Deploys to AWS after CI passes on main.
+# Triggered by workflow_run (CI must succeed). Only one deploy runs at a time.
+# Builds backend JAR (skips tests — already passed in CI), frontend dist, then runs CDK deploy.
+
 name: Deploy
 
 permissions:
@@ -17,7 +21,8 @@ concurrency:
 jobs:
   deploy:
     name: Deploy to AWS
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
       - uses: actions/checkout@v6
@@ -30,7 +35,7 @@ jobs:
 
       - uses: actions/setup-node@v6
         with:
-          node-version: '24'
+          node-version-file: frontend/package.json
           cache: npm
           cache-dependency-path: |
             frontend/package-lock.json
@@ -42,17 +47,19 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
           audience: sts.amazonaws.com
 
-      - name: Generate build-time JWT key
-        run: openssl genpkey -algorithm RSA -out src/main/resources/privateKey.pem -pkeyopt rsa_keygen_bits:2048 2>/dev/null
-        working-directory: backend
+      # JWT keys: not needed here — production reads them from Secrets Manager (env vars injected by ECS)
 
       - name: Build backend
         run: ./mvnw package -DskipTests
         working-directory: backend
 
       - name: Build frontend
-        run: npm ci && npm run build
         working-directory: frontend
+        run: npm ci
+        
+      - name: Build frontend dist
+        working-directory: frontend
+        run: npm run build
 
       - name: Install CDK dependencies
         run: npm ci
