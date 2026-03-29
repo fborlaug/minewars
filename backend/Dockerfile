@@ -1,5 +1,7 @@
 FROM eclipse-temurin:25-jre
 
+RUN apt-get update && apt-get install -y --no-install-recommends postgresql-client && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /deployments
 
 # Ordered for optimal Docker layer caching (least → most frequently changed)
