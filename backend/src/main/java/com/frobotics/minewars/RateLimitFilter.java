@@ -11,11 +11,15 @@ import jakarta.ws.rs.ext.Provider;
 import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+    import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Per-IP rate limiter for auth endpoints.
- * Uses an in-memory sliding-window token bucket per client IP.
+ * Uses an in-memory fixed-window counter per client IP.
+ * Expired buckets are evicted every {@value #WINDOW_SECONDS} seconds.
  * Designed for single-instance deployments (desiredCount: 1).
  */
 @Provider
@@ -29,6 +33,20 @@ public class RateLimitFilter implements ContainerRequestFilter {
             "/api/auth/login", new RateConfig(50)
     );
 
+    /** Daemon thread that evicts expired buckets — won't prevent JVM shutdown. */
+    private static final ScheduledExecutorService EVICTOR = Executors.newSingleThreadScheduledExecutor(r -> {
+        Thread t = new Thread(r, "rate-limit-evictor");
+        t.setDaemon(true);
+        return t;
+    });
+
+    static {
+        EVICTOR.scheduleAtFixedRate(
+                RateLimitFilter::evictExpiredBuckets,
+                WINDOW_SECONDS, WINDOW_SECONDS, TimeUnit.SECONDS
+        );
+    }
+
     @Override
     public void filter(ContainerRequestContext ctx) {
         if (!"POST".equalsIgnoreCase(ctx.getMethod())) return;
@@ -38,7 +56,7 @@ public class RateLimitFilter implements ContainerRequestFilter {
         if (config == null) return;
 
         String ip = clientIp(ctx);
-        Bucket bucket = config.buckets.compute(ip, (k, existing) -> {
+        Bucket bucket = config.buckets.compute(ip, (_, existing) -> {
             if (existing == null || existing.isExpired()) return new Bucket();
             return existing;
         });
@@ -63,16 +81,23 @@ public class RateLimitFilter implements ContainerRequestFilter {
         return "unknown";
     }
 
+    /** Remove expired buckets from all rate-limit configs to prevent unbounded memory growth. */
+    private static void evictExpiredBuckets() {
+        for (RateConfig config : LIMITS.values()) {
+            config.buckets.entrySet().removeIf(e -> e.getValue().isExpired());
+        }
+    }
+
     private record RateConfig(int maxRequests, ConcurrentHashMap<String, Bucket> buckets) {
         RateConfig(int maxRequests) {
             this(maxRequests, new ConcurrentHashMap<>());
         }
     }
 
-    /** Sliding-window counter bucket. */
+    /** Fixed-window counter bucket. */
     private static class Bucket {
         private final AtomicInteger count = new AtomicInteger(0);
-        private volatile long windowStart = now();
+        private final long windowStart = now();
 
         boolean tryConsume(int max) {
             return count.incrementAndGet() <= max;
@@ -91,6 +116,4 @@ public class RateLimitFilter implements ContainerRequestFilter {
         }
     }
 }
-
-
 

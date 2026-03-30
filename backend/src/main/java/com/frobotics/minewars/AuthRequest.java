@@ -21,4 +21,3 @@ public record AuthRequest(String username, String password) {
         return new AuthRequest(trimmedUsername, password);
     }
 }
-
