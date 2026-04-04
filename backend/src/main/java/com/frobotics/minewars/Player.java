@@ -14,7 +14,7 @@ public class Player extends PanacheEntity {
     public String username;
 
     @JsonIgnore
-    @Column(name = "password_hash", nullable = false, length = 72)
+    @Column(name = "password_hash", nullable = false, length = 255)
     public String passwordHash;
 
     public int wins;

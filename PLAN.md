@@ -40,7 +40,29 @@ A competitive 2-player minesweeper web game. **Backend**: Quarkus 3.32.4, Java 2
 
 ## Phase 7 — Tests
 
-- [ ] **Step 13 — Backend integration tests.** Add `@QuarkusTest` tests for `AuthResource`: register success, register duplicate (409), login success, login bad password (401), and register validation errors (400). Add a test for `HelloResource`: unauthenticated returns 401, authenticated returns 200. Use `rest-assured` (included with `quarkus-junit`). Verify all tests pass with `mvn test`.
+- [ ] **Step 13 — Backend integration tests.** Create `@QuarkusTest` tests under `src/test/java/com/frobotics/minewars/`. Tests run against the PostgreSQL service container in CI (port 5433). Flyway runs the migration automatically. Use `@TestTransaction` for rollback-per-test isolation. No new dependencies — `quarkus-junit` already provides REST Assured.
+
+  **`AuthResourceTest.java`** — all auth paths:
+  1. `POST /api/auth/register` valid credentials → 201, `{"message":"Registered"}`
+  2. Register same username twice → 409, `"Username taken"`
+  3. Register blank username → 400, `"Username and password required"`
+  4. Register 2-char username → 400, `"Username must be 3–32 characters"`
+  5. Register 7-char password → 400, `"Password must be 8–72 characters"`
+  6. Register null body → 400
+  7. `POST /api/auth/login` correct credentials → 200, body contains `token` and `username`
+  8. Login wrong password → 401, `"Invalid credentials"`
+  9. Login non-existent user → 401, `"Invalid credentials"` (no user enumeration)
+  10. Login blank fields → 400
+
+  **`HelloResourceTest.java`** — authenticated endpoint:
+  1. `GET /api/hello` no auth header → 401
+  2. `GET /api/hello` with valid JWT (via `@TestSecurity`) → 200
+
+  **`RateLimitFilterTest.java`** — rate limiting:
+  1. Send 51 login requests from same IP → 51st returns 429 with `Retry-After` header
+  2. Requests to non-rate-limited path → never 429
+
+  Reset `RateLimitFilter` state between tests to prevent interference (add a `@VisibleForTesting` reset method or clear the bucket map). Verify all tests pass with `./mvnw verify`.
 - [ ] **Step 14 — Frontend unit tests.** Install Vitest and `@vue/test-utils`. Add tests for the auth store (setAuth, logout, isLoggedIn with valid/expired/malformed tokens). Add component tests for `LoginView` and `RegisterView` (renders form, shows error on failed request, calls store on success). Add `"test": "vitest run"` script to `package.json`. Verify all tests pass with `npm test`.
 
 ## Phase 8 — Static Analysis & Vulnerability Scanning
