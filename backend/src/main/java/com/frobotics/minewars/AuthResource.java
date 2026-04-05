@@ -10,7 +10,7 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import org.mindrot.jbcrypt.BCrypt;
+import io.quarkus.elytron.security.common.BcryptUtil;
 
 import java.util.Map;
 
@@ -33,7 +33,7 @@ public class AuthResource {
         try {
             Player player = new Player();
             player.username = request.username();
-            player.passwordHash = BCrypt.hashpw(request.password(), BCrypt.gensalt());
+            player.passwordHash = BcryptUtil.bcryptHash(request.password());
             player.persist();
             Player.flush();
             return Response.status(Response.Status.CREATED)
@@ -46,7 +46,7 @@ public class AuthResource {
     }
 
     // Pre-hashed dummy to ensure constant-time login regardless of user existence
-    private static final String DUMMY_HASH = BCrypt.hashpw("dummy", BCrypt.gensalt());
+    private static final String DUMMY_HASH = BcryptUtil.bcryptHash("dummy");
 
     @POST
     @Path("/login")
@@ -54,7 +54,7 @@ public class AuthResource {
         AuthRequest request = raw.validated();
         Player player = Player.findByUsername(request.username());
         String hash = player != null ? player.passwordHash : DUMMY_HASH;
-        if (!BCrypt.checkpw(request.password(), hash) || player == null) {
+        if (!BcryptUtil.matches(request.password(), hash) || player == null) {
             throw Errors.unauthorized("Invalid credentials");
         }
         String token = tokenService.generate(player);
