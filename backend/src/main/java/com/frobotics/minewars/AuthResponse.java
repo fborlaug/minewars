@@ -1,4 +1,6 @@
 package com.frobotics.minewars;
 
-public record AuthResponse(String token, String username) {}
+import io.quarkus.runtime.annotations.RegisterForReflection;
 
+@RegisterForReflection
+public record AuthResponse(String token, String username) {}
