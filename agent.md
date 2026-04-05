@@ -10,7 +10,7 @@
 
 | Layer    | Technology                          | Notes                         |
 |----------|-------------------------------------|-------------------------------|
-| Backend  | Quarkus 3.32.4, Java 25, Maven      | REST, JWT auth, Panache, Flyway |
+| Backend  | Quarkus 3.34.2, Java 25, Maven      | REST, JWT auth, Panache, Flyway |
 | Frontend | Vue 3, TypeScript, Vite 8, CSS      | Vue Router, Pinia             |
 | Database | PostgreSQL 17 (Docker, port 5433)    | Flyway migrations             |
 | Infra    | AWS CDK (TypeScript)                | VPC, RDS, ECS Fargate, ALB, S3, CloudFront |
@@ -27,7 +27,7 @@ minewars/
 ├── agent.md
 ├── docker-compose.yml             # PostgreSQL 17
 ├── backend/
-│   ├── Dockerfile                 # Multi-stage build (maven → eclipse-temurin:25-jre)
+│   ├── Dockerfile                 # eclipse-temurin:25-jre (non-root, UID 185)
 │   ├── .dockerignore
 │   ├── pom.xml
 │   ├── README.md
@@ -83,7 +83,7 @@ minewars/
 - `quarkus-smallrye-jwt-build` — JWT generation
 - `quarkus-smallrye-health` — health checks (/q/health)
 - `quarkus-arc` — CDI / dependency injection
-- `org.mindrot:jbcrypt` — password hashing
+- `quarkus-elytron-security-common` — password hashing (BcryptUtil)
 - `quarkus-junit` — testing (test scope)
 
 ### Frontend (package.json)
@@ -113,7 +113,7 @@ minewars/
 |--------------|--------------------------|---------------------------------------------------------|
 | Dependencies | Minimal / YAGNI          | Add only when a plan step requires them                 |
 | Database     | PostgreSQL 17 (Docker)   | Migrated from H2 in Step 8; Flyway manages schema       |
-| Auth         | RSA-signed JWT, jBCrypt  | Keys in Secrets Manager (prod), classpath files (dev)   |
+| Auth         | RSA-signed JWT, Quarkus BcryptUtil | Keys in Secrets Manager (prod), classpath files (dev)   |
 | Game model   | Real-time simultaneous   | Both players click freely, no turns                     |
 | Deployment   | AWS CDK + GitHub Actions | ECS Fargate (backend), S3 + CloudFront (frontend)       |
 | Infra        | No NAT Gateway           | RDS in isolated subnet, saves ~$32/month                |

@@ -158,4 +158,4 @@ curl -s $HOST/api/hello -H "Authorization: Bearer $TOKEN"
 - JDBC Driver - PostgreSQL ([guide](https://quarkus.io/guides/datasource)): Connect to the PostgreSQL database via JDBC
 - Flyway ([guide](https://quarkus.io/guides/flyway)): Handle your database schema migrations
 - SmallRye Health ([guide](https://quarkus.io/guides/smallrye-health)): Health check endpoints for liveness and readiness probes
-- jBCrypt: Password hashing using the bcrypt algorithm
+- Elytron Security Common ([guide](https://quarkus.io/guides/security-built-in-authentication)): Password hashing with BcryptUtil

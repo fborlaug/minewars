@@ -1,6 +1,6 @@
 # MineWars — 2-Player Real-Time Minesweeper
 
-A competitive 2-player minesweeper web game. **Backend**: Quarkus 3.32.4, Java 25, REST + WebSockets, Maven, PostgreSQL. **Frontend**: Vue 3, TypeScript, Vite, HTML5/CSS. Players log in, enter a lobby, start games, and race in real-time to reveal cells. Both players play simultaneously — clicks are broadcast to both boards instantly. The first to hit a bomb loses; if all safe cells are revealed, the player with the most revealed cells wins.
+A competitive 2-player minesweeper web game. **Backend**: Quarkus 3.34.2, Java 25, REST + WebSockets, Maven, PostgreSQL. **Frontend**: Vue 3, TypeScript, Vite, HTML5/CSS. Players log in, enter a lobby, start games, and race in real-time to reveal cells. Both players play simultaneously — clicks are broadcast to both boards instantly. The first to hit a bomb loses; if all safe cells are revealed, the player with the most revealed cells wins.
 
 ---
 

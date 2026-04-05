@@ -6,11 +6,11 @@ A competitive 2-player real-time minesweeper web game. Players log in, enter a l
 
 | Layer    | Technology                        |
 |----------|-----------------------------------|
-| Backend  | Quarkus 3.32.4, Java 25, Maven   |
+| Backend  | Quarkus 3.34.2, Java 25, Maven   |
 | Frontend | Vue 3, TypeScript, Vite 8        |
 | Database | PostgreSQL 17 (Docker)            |
 | Infra    | AWS CDK (TypeScript)              |
-| Auth     | SmallRye JWT (RSA-signed), jBCrypt|
+| Auth     | SmallRye JWT (RSA-signed), Quarkus BcryptUtil|
 
 ## Project Structure
 
@@ -28,7 +28,7 @@ minewars/
 
 **CI** (`.github/workflows/ci.yml`) runs on every push and PR:
 
-- **Backend:** builds and tests with `./mvnw package` (Java 25, PostgreSQL 17 service container)
+- **Backend:** builds and tests with `./mvnw verify` (Java 25, PostgreSQL 17 service container)
 - **Frontend:** runs `npm ci`, type-check, build, and test (Node 24)
 
 **CD** (`.github/workflows/deploy.yml`) runs after CI passes on `main`:
@@ -78,7 +78,7 @@ Runs on http://localhost:5173. API calls are proxied to the backend.
 
 ## AWS Infrastructure (CDK)
 
-The `infra/` folder contains an AWS CDK app that provisions the production environment (VPC, RDS PostgreSQL, and — in later steps — ECS Fargate, S3, CloudFront).
+The `infra/` folder contains an AWS CDK app that provisions the production environment (VPC, RDS PostgreSQL, ECS Fargate, S3, CloudFront).
 
 ### One-time AWS setup
 

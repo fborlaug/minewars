@@ -7,8 +7,12 @@ Shell into the running Fargate container and use `psql` to query the production 
 Install the AWS SSM Session Manager plugin (one-time):
 
 ```sh
-brew install --cask session-manager-plugin
+curl "https://s3.amazonaws.com/session-manager-downloads/plugin/latest/mac_arm64/session-manager-plugin.pkg" -o "session-manager-plugin.pkg"
+sudo installer -pkg session-manager-plugin.pkg -target /
+sudo ln -s /usr/local/sessionmanagerplugin/bin/session-manager-plugin /usr/local/bin/session-manager-plugin
 ```
+
+> See the [official install guide](https://docs.aws.amazon.com/systems-manager/latest/userguide/install-plugin-verify.html) for other platforms.
 
 ## Connect
 
@@ -60,4 +64,4 @@ psql "host=$(echo $QUARKUS_DATASOURCE_JDBC_URL | sed 's|jdbc:postgresql://||;s|:
 
 - ECS Exec must be enabled on the Fargate service (`enableExecuteCommand: true` in CDK).
 - The session ends when you type `exit` or the task is replaced during a deployment.
-- The container runs as root during ECS Exec, so `apt-get install` works without `sudo`.
+- The container runs as non-root (UID 185). You may need to run commands that require root via workarounds, or temporarily override the user in the task definition for debugging.
